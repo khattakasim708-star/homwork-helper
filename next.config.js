@@ -1,12 +1,12 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  output: 'export', // enables static export for Pages
+  output: 'export', // allows static export
   experimental: {
-    appDir: true,
+    appDir: true
   },
   images: {
-    unoptimized: true, // Cloudflare Pages doesn't need next/image optimization
-  },
-};
+    unoptimized: true
+  }
+}
 
 module.exports = nextConfig;
