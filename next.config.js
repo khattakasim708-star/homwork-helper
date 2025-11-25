@@ -1,12 +1,9 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  output: 'export', // allows static export
+  reactStrictMode: true,
   experimental: {
     appDir: true
-  },
-  images: {
-    unoptimized: true
   }
-}
+};
 
 module.exports = nextConfig;
