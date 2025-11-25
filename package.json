@@ -1,9 +1,11 @@
 {
+  "name": "homwork-helper",
+  "version": "1.0.0",
+  "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
-    "deploy": "wrangler pages publish ./out"
+    "build": "next build && next export",
+    "start": "next start"
   },
   "dependencies": {
     "next": "13.5.1",
@@ -11,9 +13,5 @@
     "react-dom": "18.2.0",
     "framer-motion": "^10.12.16",
     "lucide-react": "^0.271.0"
-  },
-  "devDependencies": {
-    "@cloudflare/wrangler": "^3.9.0",
-    "typescript": "^5.2.2"
   }
 }
