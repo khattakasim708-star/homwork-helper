@@ -1,68 +1,45 @@
-// Path: homwork-helper/app/page.tsx
 "use client";
 
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Send, Copy, RotateCcw, Sparkles, Check, Zap, GraduationCap, Timer } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 
-interface DiagramAnswerProps {
-  content: string[][];
-  visible: boolean;
-}
-
-function DiagramAnswer({ content, visible }: DiagramAnswerProps) {
-  return (
-    <AnimatePresence>
-      {visible && (
-        <motion.div
-          initial={{ opacity: 0, y: 10, scale: 0.8 }}
-          animate={{ opacity: 1, y: 0, scale: 1 }}
-          exit={{ opacity: 0, y: -10, scale: 0.8 }}
-          className="p-4 bg-gray-50 rounded-xl shadow-inner overflow-auto my-4"
-        >
-          <pre className="font-mono text-sm text-gray-800">
-            {content.map((row) => row.map(cell => cell.padEnd(10, " ")).join("")).join("\n")}
-          </pre>
-        </motion.div>
-      )}
-    </AnimatePresence>
-  );
-}
-
+// Subjects with animated shapes instead of PNGs
 const SUBJECTS = [
-  { id: "urdu", name: "Urdu", gradient: "linear-gradient(135deg,#10b981 0%,#0d9488 100%)", icon: <div className="w-12 h-12 rounded-full bg-green-500 animate-pulse flex items-center justify-center text-white font-bold">اردو</div> },
-  { id: "english", name: "English", gradient: "linear-gradient(135deg,#3b82f6 0%,#4f46e5 100%)", icon: <div className="w-12 h-12 rounded-full bg-blue-500 animate-pulse flex items-center justify-center text-white font-bold">EN</div> },
-  { id: "math", name: "Math", gradient: "linear-gradient(135deg,#f43f5e 0%,#db2777 100%)", icon: <div className="w-12 h-12 rounded-full bg-pink-500 animate-pulse text-white font-bold">M</div> },
-  { id: "physics", name: "Physics", gradient: "linear-gradient(135deg,#8b5cf6 0%,#7c3aed 100%)", icon: <div className="w-12 h-12 rounded-full bg-violet-500 animate-pulse text-white font-bold">P</div> },
-  { id: "chemistry", name: "Chemistry", gradient: "linear-gradient(135deg,#f59e0b 0%,#ea580c 100%)", icon: <div className="w-12 h-12 rounded-full bg-amber-500 animate-pulse text-white font-bold">C</div> },
-  { id: "biology", name: "Biology", gradient: "linear-gradient(135deg,#22c55e 0%,#059669 100%)", icon: <div className="w-12 h-12 rounded-full bg-green-600 animate-pulse text-white font-bold">B</div> },
-  { id: "gk", name: "General Knowledge", gradient: "linear-gradient(135deg,#facc15 0%,#f97316 100%)", icon: <div className="w-12 h-12 bg-yellow-400 rounded-full flex items-center justify-center text-white font-bold">GK</div> },
-  { id: "test-ai", name: "Test AI", gradient: "linear-gradient(135deg,#374151 0%,#111827 100%)", icon: <div className="w-12 h-12 rounded-full bg-gray-800 flex items-center justify-center text-white font-bold">AI</div> },
+  { id: "urdu", name: "Urdu", gradient: "linear-gradient(135deg, #10b981 0%, #0d9488 100%)", icon: <div className="w-14 h-14 rounded-full bg-gradient-to-br from-emerald-400 to-teal-600 animate-pulse" /> },
+  { id: "english", name: "English", gradient: "linear-gradient(135deg, #3b82f6 0%, #4f46e5 100%)", icon: <div className="w-14 h-14 rounded-full bg-gradient-to-br from-blue-400 to-indigo-600 animate-bounce" /> },
+  { id: "math", name: "Math", gradient: "linear-gradient(135deg, #f43f5e 0%, #db2777 100%)", icon: <div className="w-14 h-14 rounded-full bg-pink-500 animate-spin" /> },
+  { id: "physics", name: "Physics", gradient: "linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)", icon: <div className="w-14 h-14 rounded-full bg-violet-500 animate-pulse" /> },
+  { id: "chemistry", name: "Chemistry", gradient: "linear-gradient(135deg, #f59e0b 0%, #ea580c 100%)", icon: <div className="w-14 h-14 rounded-full bg-amber-500 animate-bounce" /> },
+  { id: "biology", name: "Biology", gradient: "linear-gradient(135deg, #22c55e 0%, #059669 100%)", icon: <div className="w-14 h-14 rounded-full bg-green-500 animate-pulse" /> },
+  { id: "gk", name: "General Knowledge", gradient: "linear-gradient(135deg, #facc15 0%, #f97316 100%)", icon: <div className="w-14 h-14 rounded-full bg-yellow-400 flex items-center justify-center text-white font-bold animate-bounce">GK</div> },
+  { id: "test-ai", name: "Test AI", gradient: "linear-gradient(135deg, #374151 0%, #111827 100%)", icon: <div className="w-14 h-14 rounded-full bg-gray-800 flex items-center justify-center text-white font-bold animate-pulse">AI</div> },
 ];
 
+// Sample questions
 const SAMPLE_QUESTIONS: Record<string, string> = {
   urdu: "اردو کے مشہور شعرا کے نام بتائیے",
   english: "What is a metaphor?",
   math: "What is the Pythagorean theorem?",
   physics: "What is gravity?",
-  chemistry: "Draw a water molecule diagram",
-  biology: "Show DNA double helix structure",
+  chemistry: "What is an atom?",
+  biology: "What is photosynthesis?",
   gk: "Who is the current president of the USA?",
   "test-ai": "Ask any question to test AI capabilities."
 };
 
+// Prompts
 const SUBJECT_PROMPTS: Record<string, any> = {
   homework: {
     urdu: "Answer in Urdu under 3 sentences.",
     english: "Answer English question under 3 sentences.",
     math: "Solve math question fully step by step.",
     physics: "Explain physics briefly under 3 sentences.",
-    chemistry: "Explain chemistry briefly under 3 sentences. Provide diagram if applicable.",
-    biology: "Explain biology briefly under 3 sentences. Provide diagram if applicable.",
+    chemistry: "Explain chemistry briefly under 3 sentences.",
+    biology: "Explain biology briefly under 3 sentences.",
     gk: "Answer general knowledge briefly under 3 sentences.",
     "test-ai": "Test AI questions briefly."
   },
@@ -71,129 +48,79 @@ const SUBJECT_PROMPTS: Record<string, any> = {
     english: "Provide concise exam-focused answer in English under 2 sentences.",
     math: "Solve math question fully step by step.",
     physics: "Provide concise exam-focused answer under 2 sentences.",
-    chemistry: "Provide concise exam-focused answer with diagram if needed.",
-    biology: "Provide concise exam-focused answer with diagram if needed.",
+    chemistry: "Provide concise exam-focused answer under 2 sentences.",
+    biology: "Provide concise exam-focused answer under 2 sentences.",
     gk: "Answer general knowledge questions briefly under 2 sentences.",
     "test-ai": "Answer any question."
   }
 };
 
-// Animated Credits Component
-function AnimatedCredits() {
-  const [text, setText] = useState("");
-  const names = ["Ishfaq", "Asim", "Talha"];
-  const [currentNameIndex, setCurrentNameIndex] = useState(0);
-  const [isDeleting, setIsDeleting] = useState(false);
-
-  useEffect(() => {
-    let timer: NodeJS.Timeout;
-    const fullText = names[currentNameIndex];
-    timer = setTimeout(() => {
-      if (!isDeleting) {
-        setText(fullText.substring(0, text.length + 1));
-        if (text.length + 1 === fullText.length) setIsDeleting(true);
-      } else {
-        setText(fullText.substring(0, text.length - 1));
-        if (text.length === 0) {
-          setIsDeleting(false);
-          setCurrentNameIndex((prev) => (prev + 1) % names.length);
-        }
-      }
-    }, isDeleting ? 150 : 250);
-
-    return () => clearTimeout(timer);
-  }, [text, isDeleting, currentNameIndex]);
-
-  return (
-    <motion.div
-      className="text-2xl font-bold text-indigo-600 text-center my-6"
-      animate={{ y: [0, -10, 0] }}
-      transition={{ repeat: Infinity, duration: 2 }}
-    >
-      {text}
-    </motion.div>
-  );
-}
-
 export default function Page() {
   const [selectedSubject, setSelectedSubject] = useState<string>("");
   const [question, setQuestion] = useState<string>("");
   const [answer, setAnswer] = useState<string>("");
-  const [diagramContent, setDiagramContent] = useState<string[][] | null>(null);
-  const [showDiagram, setShowDiagram] = useState<boolean>(true);
-  const [isLoading, setIsLoading] = useState(false);
-  const [progress, setProgress] = useState(0);
-  const [error, setError] = useState<string | null>(null);
-  const [copied, setCopied] = useState(false);
-  const [mode, setMode] = useState<"homework" | "exam">("homework");
-  const [hoveredSubject, setHoveredSubject] = useState<string | null>(null);
   const [typingAnswer, setTypingAnswer] = useState<string>("");
-  const [answerLength, setAnswerLength] = useState<number>(2); // default
-  const [warningText, setWarningText] = useState<string>("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [hoveredSubject, setHoveredSubject] = useState<string | null>(null);
+  const [mode, setMode] = useState<"homework" | "exam">("homework");
+  const [answerLength, setAnswerLength] = useState<number>(3); // 1-10
+  const [diagramEnabled, setDiagramEnabled] = useState<boolean>(false);
+  const [copied, setCopied] = useState(false);
 
   const handleSubjectSelect = (subjectId: string) => {
     setSelectedSubject(subjectId);
     setQuestion(SAMPLE_QUESTIONS[subjectId] || "");
     setAnswer("");
     setTypingAnswer("");
-    setDiagramContent(null);
-    setError(null);
-    setWarningText("");
+    setDiagramEnabled(false);
   };
 
-  const generateAIAnswer = async (q: string, subject: string, length:number) => {
+  const getGeminiAnswer = async (q: string, subj: string) => {
     const apiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY;
     if (!apiKey) throw new Error("API key missing");
-
-    let prompt = `${SUBJECT_PROMPTS[mode][subject]}\nAnswer length: ${length}.\nQuestion: ${q}\nAnswer:`;
-
-    const simulatedAnswer = `${subject.toUpperCase()} Answer for "${q}" with length ${length} lines.`.repeat(length>1?length:1);
-
-    return simulatedAnswer;
+    const prompt = `${SUBJECT_PROMPTS[mode][subj]}\nAnswer length: ${answerLength}\nQuestion: ${q}\nAnswer:`;
+    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ contents:[{ parts:[{ text: prompt }] }] })
+    });
+    if (!res.ok) throw new Error("AI failed");
+    const data = await res.json();
+    return data.candidates?.[0]?.content?.parts?.[0]?.text || "No response";
   };
 
   const handleSubmit = async () => {
-    if (!selectedSubject || !question.trim()) {
-      setError("Select subject and enter question");
-      return;
+    if (!selectedSubject || !question.trim()) return;
+
+    if (mode === "homework") {
+      if (selectedSubject === "gk" && !question.toLowerCase().includes("general")) {
+        setAnswer("Please ask a question related to General Knowledge.");
+        return;
+      }
+      if (selectedSubject === "test-ai") {
+        setAnswer("Test AI is only available in Exam mode.");
+        return;
+      }
     }
 
     setIsLoading(true);
-    setError(null);
-    setAnswer("");
     setTypingAnswer("");
-    setDiagramContent(null);
-    setWarningText("");
-    setProgress(0);
+    setAnswer("");
 
     try {
-      if (answerLength === 1 && selectedSubject !== "math") {
-        setWarningText("⚠️ Can't generate full meaningful answer in 1 line!");
+      // Fetch AI answer
+      const aiAnswer = await getGeminiAnswer(question, selectedSubject);
+
+      // Typing animation
+      let temp = "";
+      for (let char of aiAnswer) {
+        temp += char;
+        setTypingAnswer(temp);
+        await new Promise(r => setTimeout(r, 20));
       }
-
-      const aiResponse = await generateAIAnswer(question, selectedSubject, answerLength);
-
-      if (selectedSubject === "chemistry" && question.toLowerCase().includes("diagram")) {
-        setDiagramContent([
-          ["C","O"],
-          ["_.Valency","_.Valency"],
-          ["_.Swap","_.Swap"]
-        ]);
-      }
-
-      let current = "";
-      for (let i = 0; i < aiResponse.length; i++) {
-        current += aiResponse[i];
-        setTypingAnswer(current);
-        setProgress(((i + 1) / aiResponse.length) * 100);
-        await new Promise(r => setTimeout(r, 15));
-      }
-
-      setAnswer(aiResponse);
-      setProgress(100);
-
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to get answer.");
+      setAnswer(aiAnswer);
+    } catch {
+      setTypingAnswer("Failed to generate answer.");
     } finally {
       setIsLoading(false);
     }
@@ -208,31 +135,96 @@ export default function Page() {
   };
 
   return (
-    <div className="min-h-screen p-4 md:p-6 bg-gradient-to-br from-slate-50 to-blue-50">
+    <div className="min-h-screen p-4 bg-gradient-to-br from-slate-50 to-blue-50">
       {/* Header */}
-      <header className="text-center mb-8 relative">
-        <motion.div className="absolute -top-5 left-1/2 -translate-x-1/2" animate={{ y: [0, 10, 0] }} transition={{ repeat: Infinity, duration: 2 }}>
-          <Sparkles size={48} className="text-indigo-400 animate-pulse" />
-        </motion.div>
-        <h1 className="text-3xl md:text-5xl font-extrabold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent animate-bounce">
+      <div className="text-center mb-6">
+        <motion.h1 animate={{ scale:[1,1.1,1] }} transition={{ repeat: Infinity, duration: 2 }} className="text-4xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 text-transparent bg-clip-text">
           AI Homework Helper
-        </h1>
-        <p className="text-gray-600 max-w-md mx-auto mt-3 animate-fadeIn">
-          Instant animated answers with adjustable length & diagrams!
-        </p>
-      </header>
-
-      <AnimatedCredits /> {/* Credit Animation */}
+        </motion.h1>
+        <motion.p animate={{ y:[0,10,0] }} transition={{ repeat: Infinity, duration: 2 }} className="text-gray-700 mt-2">Get animated, meaningful answers</motion.p>
+      </div>
 
       {/* Mode */}
-      <div className="flex justify-center gap-2 mb-6">
-        <Button variant={mode==="homework"?"default":"outline"} size="sm" onClick={()=>setMode("homework")}><GraduationCap size={16}/> Homework</Button>
-        <Button variant={mode==="exam"?"default":"outline"} size="sm" onClick={()=>setMode("exam")}><Timer size={16}/> Exam</Button>
+      <div className="flex justify-center gap-2 mb-4">
+        <Button variant={mode==="homework"?"default":"outline"} size="sm" onClick={()=>setMode("homework")}>Homework</Button>
+        <Button variant={mode==="exam"?"default":"outline"} size="sm" onClick={()=>setMode("exam")}>Exam</Button>
       </div>
 
       {/* Subjects */}
-      <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3 mb-6">
-        {SUBJECTS.map((sub, i) => (
+      <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3 mb-4">
+        {SUBJECTS.map((sub,i)=>(
+          <motion.div key={sub.id} initial={{opacity:0, scale:0.8}} animate={{opacity:1, scale:1}} transition={{delay:0.05*i}}>
+            <Card className={cn("cursor-pointer shadow-md hover:shadow-xl border-0", selectedSubject===sub.id?"ring-2 ring-indigo-500":"")} onClick={()=>handleSubjectSelect(sub.id)}>
+              <CardContent className="flex flex-col items-center p-3">
+                <motion.div animate={hoveredSubject===sub.id ? {scale:[1,1.2,1], rotate:[0,10,-10,0]} : {}} transition={{repeat:hoveredSubject===sub.id?Infinity:0, duration:0.6}} className="w-16 h-16 flex items-center justify-center mb-2 rounded-xl shadow-lg" style={{ background: sub.gradient }}>
+                  {sub.icon}
+                </motion.div>
+                <span className="text-xs font-semibold text-gray-700 text-center">{sub.name}</span>
+              </CardContent>
+            </Card>
+          </motion.div>
+        ))}
+      </div>
+
+      {/* Question */}
+      <Card className="mb-4">
+        <CardHeader><CardTitle>Enter your question</CardTitle></CardHeader>
+        <CardContent>
+          <Textarea value={question} onChange={(e)=>setQuestion(e.target.value)} placeholder="Type question..." maxLength={500} className="min-h-[100px]" />
+        </CardContent>
+      </Card>
+
+      {/* Answer Length & Diagram Toggle */}
+      <div className="flex flex-col sm:flex-row gap-3 mb-3 items-center">
+        <div className="flex items-center gap-2">
+          <span>Answer Length:</span>
+          <input type="number" min={1} max={10} value={answerLength} onChange={e=>setAnswerLength(Number(e.target.value))} className="w-16 border rounded p-1"/>
+        </div>
+        {selectedSubject==="chemistry" && <Button onClick={()=>setDiagramEnabled(!diagramEnabled)} variant={diagramEnabled?"default":"outline"} size="sm">Diagram {diagramEnabled?"ON":"OFF"}</Button>}
+      </div>
+
+      {/* Submit Button */}
+      <div className="mb-4 relative">
+        <motion.button onClick={handleSubmit} disabled={isLoading} whileTap={{scale:0.95}} className="w-full py-4 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-bold rounded-xl shadow-lg flex justify-center items-center gap-2">
+          {isLoading ? <span className="animate-spin w-5 h-5 border-2 border-white border-t-transparent rounded-full"></span> : "Get Answer"}
+        </motion.button>
+        {/* Green progress line */}
+        {isLoading && <motion.div className="absolute bottom-0 left-0 h-1 bg-green-400" animate={{width:["0%","100%"]}} transition={{duration:1, repeat: Infinity}} />}
+      </div>
+
+      {/* Answer */}
+      <AnimatePresence>
+        {typingAnswer && (
+          <motion.div initial={{opacity:0, y:10}} animate={{opacity:1, y:0}} exit={{opacity:0, y:-10}} className="mb-4">
+            <Card className="shadow-xl rounded-2xl bg-white">
+              <CardHeader><CardTitle>AI Answer</CardTitle></CardHeader>
+              <CardContent className="prose max-w-none text-gray-700">
+                {typingAnswer}
+                {diagramEnabled && selectedSubject==="chemistry" && (
+                  <pre className="mt-2 p-2 bg-gray-100 rounded text-sm">C  O{"\n"}_._Valency  _._Valency{"\n"}_._swap   _._swap</pre>
+                )}
+              </CardContent>
+              <div className="flex justify-end p-3">
+                <Button variant="outline" size="sm" onClick={handleCopy}>{copied?"Copied!":"Copy"}</Button>
+              </div>
+            </Card>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Credits Animation */}
+      <div className="flex justify-center gap-4 mt-6">
+        {["Ishfaq","Asim","Talha"].map((name,i)=>(
+          <motion.span key={i} animate={{y:[0,-10,0], opacity:[0.5,1,0.5]}} transition={{repeat: Infinity, duration:3, delay:i*0.3}} className="text-indigo-600 font-bold text-lg">
+            {name.split("").map((char,j)=>(
+              <motion.span key={j} animate={{opacity:[0,1], y:[-5,0]}} transition={{delay:j*0.05}}>{char}</motion.span>
+            ))}
+          </motion.span>
+        ))}
+      </div>
+    </div>
+  );
+    }((sub, i) => (
           <motion.div key={sub.id} initial={{ opacity:0, scale:0.8 }} animate={{ opacity:1, scale:1 }} transition={{ delay: 0.05*i }}>
             <Card
               className={cn("cursor-pointer shadow-md border-0 transition-all hover:shadow-xl hover:scale-105", selectedSubject===sub.id?"ring-2 ring-indigo-500":"hover:ring-1 hover:ring-indigo-300")}
