@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, MutableRefObject } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import gsap from "gsap";
 import Lenis from "@studio-freight/lenis";
@@ -67,16 +67,14 @@ export default function Page() {
   const [isLoading, setIsLoading] = useState(false);
   const [progress, setProgress] = useState<number>(0);
   const [mode, setMode] = useState<"homework" | "exam">("homework");
-  const [answerLength, setAnswerLength] = useState<number>(2); // default 2 lines
+  const [answerLength, setAnswerLength] = useState<number>(2); 
   const [showDiagram, setShowDiagram] = useState<boolean>(true);
   const [credits, setCredits] = useState<string>("Ishfaq, Asim, Talha");
 
-  // refs for animations
+  // refs
   const lenisRef = useRef<Lenis | null>(null);
-  const subjectsRef = useRef<HTMLDivElement | null>(null);
   const answerContainerRef = useRef<HTMLDivElement | null>(null);
   const cardRefs = useRef<Record<string, HTMLDivElement | null>>({});
-  const creditsRef = useRef<HTMLDivElement | null>(null);
 
   // ------------------------ HANDLE SUBJECT ------------------------
   const handleSubjectSelect = (subject: string) => {
@@ -85,14 +83,13 @@ export default function Page() {
     setAnswer("");
     setProgress(0);
 
-    // subtle focus animation
     const card = cardRefs.current[subject];
     if (card) {
-      gsap.fromTo(card, { scale: 0.96, boxShadow: "0 6px 10px rgba(0,0,0,0.06)" }, { scale: 1, boxShadow: "0 18px 40px rgba(2,6,23,0.12)", duration: 0.45, ease: "power3.out" });
+      gsap.fromTo(card, { scale: 0.96 }, { scale: 1, duration: 0.45, ease: "power3.out" });
     }
   };
 
-  // ------------------------ SIMULATED API CALL ------------------------
+  // ------------------------ REAL AI API ------------------------
   const handleSubmit = async () => {
     if (!selectedSubject || !question.trim()) return;
     if (mode === "homework") {
@@ -111,40 +108,42 @@ export default function Page() {
     setProgress(0);
 
     try {
-      const apiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY;
-      if (!apiKey) throw new Error("API key missing");
-
-      // Smooth progress animation
-      for (let i = 0; i <= 100; i += 5) {
+      // progress animation
+      for (let i = 0; i <= 70; i += 7) {
         setProgress(i);
-        // micro pause to feel smooth
-        await new Promise((r) => setTimeout(r, 24));
+        await new Promise((r) => setTimeout(r, 25));
       }
 
-      // Generate answer (simulate API)
-      let ans = `✨ Answer for "${question}" in ${selectedSubject.toUpperCase()} (${mode})`;
+      // call server API
+      const prompt = `${SUBJECT_PROMPTS[mode][selectedSubject]}\nQuestion: ${question}`;
+      const res = await fetch("/api/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ prompt }),
+      });
+      const data = await res.json();
+      let ans = data?.answer || "No answer returned.";
+
       if (selectedSubject === "chemistry" && showDiagram) {
-        ans += "\n\nDiagram: \n  H - O - H\n (Hydrogen) (Oxygen)";
+        ans += "\n\nDiagram:\n H - O - H\n(Hydrogen / Oxygen)";
       }
+
       if (answerLength === 1 && ans.split("\n").length > 1) {
         ans = "⚠️ Cannot generate 1-line meaningful answer. Increase answer length.";
       }
 
-      // typewriter-like reveal using GSAP in answer container (we set state then animate reveal)
       setAnswer(ans);
-      await new Promise((r) => setTimeout(r, 60));
-      if (answerContainerRef.current) {
-        gsap.fromTo(answerContainerRef.current, { opacity: 0, y: 6 }, { opacity: 1, y: 0, duration: 0.45, ease: "power2.out" });
-      }
-    } catch (e) {
-      setAnswer("Failed to generate answer.");
+      setProgress(100);
+    } catch (err) {
+      console.error(err);
+      setAnswer("Failed to generate answer. Check API key or network.");
+      setProgress(100);
     } finally {
       setIsLoading(false);
-      setProgress(100);
     }
   };
 
-  // ------------------------ CREDIT ANIMATION ------------------------
+  // ------------------------ CREDITS ANIMATION ------------------------
   useEffect(() => {
     let idx = 0;
     const creditsArr = ["Ishfaq", "Asim", "Talha"];
@@ -157,85 +156,95 @@ export default function Page() {
     return () => clearInterval(interval);
   }, []);
 
-  // ------------------------ LENIS smooth scroll ------------------------
+  // ------------------------ LENIS scroll ------------------------
   useEffect(() => {
-    if (typeof window === "undefined") return;
     if (lenisRef.current) return;
-
-    const lenis = new Lenis({
-      duration: 1.1,
-      easing: (t: number) => Math.min(1, 1.001 - Math.pow(2, -10 * t)), // buttery curve
-      smooth: true,
-      direction: "vertical",
-      gestureDirection: "vertical",
-      wheelMultiplier: 1,
-      smoothTouch: true
-    });
+    const lenis = new Lenis({ duration: 1.1, smooth: true });
     lenisRef.current = lenis;
-
-    function raf(time: number) {
-      lenis.raf(time);
-      requestAnimationFrame(raf);
-    }
+    function raf(time: number) { lenis.raf(time); requestAnimationFrame(raf); }
     requestAnimationFrame(raf);
-
-    return () => {
-      lenis.destroy();
-      lenisRef.current = null;
-    };
+    return () => lenis.destroy();
   }, []);
 
-  // ------------------------ AUTO-ANIMATE for answer transitions ------------------------
+  // ------------------------ AUTO-ANIMATE ------------------------
   useEffect(() => {
     if (answerContainerRef.current) {
       autoAnimate(answerContainerRef.current, { duration: 450, easing: "cubic-bezier(.2,.9,.3,1)" });
     }
   }, [answerContainerRef]);
 
-  // ------------------------ Entrance animations ------------------------
-  useEffect(() => {
-    // subtle page entrance
-    gsap.from("header .hero", { opacity: 0, y: 18, stagger: 0.08, duration: 0.7, ease: "power3.out" });
-    gsap.from(".subject-card", { opacity: 0, y: 18, stagger: 0.04, duration: 0.6, ease: "power3.out", delay: 0.12 });
-    gsap.from(".controls", { opacity: 0, y: 10, duration: 0.6, ease: "power3.out", delay: 0.18 });
-    gsap.from(".question-card", { opacity: 0, y: 14, duration: 0.6, ease: "power3.out", delay: 0.22 });
-    gsap.from(".submit-row", { opacity: 0, y: 10, duration: 0.6, ease: "power3.out", delay: 0.26 });
-    gsap.from(".credits-glow", { opacity: 0, y: 6, duration: 0.7, ease: "sine.out", delay: 0.3 });
-  }, []);
-
-  // ------------------------ 3D tilt hover for cards ------------------------
+  // ------------------------ 3D tilt hover ------------------------
   const handleCardPointer = (e: React.PointerEvent, id: string) => {
-    const el = cardRefs.current[id];
-    if (!el) return;
+    const el = cardRefs.current[id]; if (!el) return;
     const rect = el.getBoundingClientRect();
     const x = (e.clientX - rect.left) / rect.width - 0.5;
     const y = (e.clientY - rect.top) / rect.height - 0.5;
-    const rotX = (-y * 8).toFixed(2);
-    const rotY = (x * 10).toFixed(2);
-    gsap.to(el, { rotateX: rotX + "deg", rotateY: rotY + "deg", scale: 1.03, transformPerspective: 800, transformOrigin: "center", duration: 0.25, ease: "power3.out" });
+    gsap.to(el, { rotateX: -y * 8, rotateY: x * 10, scale: 1.03, transformOrigin: "center", duration: 0.25, ease: "power3.out" });
   };
-  const resetCardTransform = (id: string) => {
-    const el = cardRefs.current[id];
-    if (!el) return;
-    gsap.to(el, { rotateX: 0, rotateY: 0, scale: 1, duration: 0.45, ease: "elastic.out(1, 0.6)" });
-  };
+  const resetCardTransform = (id: string) => { const el = cardRefs.current[id]; if (!el) return; gsap.to(el, { rotateX: 0, rotateY: 0, scale: 1, duration: 0.45, ease: "elastic.out(1,0.6)" }); };
 
   // ------------------------ RENDER ------------------------
   return (
     <div className="min-h-screen p-4 md:p-6 bg-gradient-to-br from-slate-50 to-blue-50 selection:bg-indigo-200">
       {/* Header */}
       <header className="text-center mb-6 relative">
-        <div className="hero">
-          <motion.h1
-            className="text-4xl md:text-5xl lg:text-6xl font-extrabold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent"
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, ease: "easeOut" }}
-          >
-            AI Homework Helper
-          </motion.h1>
-          <motion.p className="mt-2 text-gray-600" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.08 }}>
-            Instant, meaningful answers with buttery-smooth animations.
+        <motion.h1 className="text-4xl md:text-6xl font-extrabold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>AI Homework Helper</motion.h1>
+        <motion.p className="mt-2 text-gray-600" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>Instant, meaningful answers with buttery-smooth animations.</motion.p>
+      </header>
+
+      {/* Mode */}
+      <div className="flex justify-center gap-2 mb-4">
+        <Button variant={mode === "homework" ? "default" : "outline"} onClick={() => setMode("homework")}>Homework</Button>
+        <Button variant={mode === "exam" ? "default" : "outline"} onClick={() => setMode("exam")}>Exam</Button>
+      </div>
+
+      {/* Subjects */}
+      <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3 mb-4">
+        {SUBJECTS.map((sub) => (
+          <motion.div key={sub.id} whileHover={{ scale: 1.02 }} onPointerMove={(e) => handleCardPointer(e, sub.id)} onPointerLeave={() => resetCardTransform(sub.id)}>
+            <Card ref={el => cardRefs.current[sub.id] = el} className={cn("shadow-md p-2 transform-gpu transition-transform will-change-transform", selectedSubject===sub.id?"ring-2 ring-indigo-500":"")}>
+              <CardContent className="flex flex-col items-center p-3 rounded-lg" style={{ background: `linear-gradient(135deg, ${sub.color.split(" ")[0]}, ${sub.color.split(" ")[2]})` }}>
+                <div className="w-14 h-14 flex items-center justify-center text-white font-bold text-lg rounded-full">{sub.name[0]}</div>
+                <span className="text-xs mt-1 font-semibold text-gray-100">{sub.name}</span>
+              </CardContent>
+            </Card>
+          </motion.div>
+        ))}
+      </div>
+
+      {/* Answer Length */}
+      <div className="flex items-center gap-2 mb-4 justify-center">
+        <span className="text-sm font-semibold">Answer Length:</span>
+        {[1,2,3,4].map(n => <Button key={n} variant={answerLength===n?"default":"outline"} onClick={()=>setAnswerLength(n)}>{n}</Button>)}
+      </div>
+
+      {/* Chemistry diagram */}
+      {selectedSubject==="chemistry" && <div className="flex justify-center mb-4"><Button variant={showDiagram?"default":"outline"} onClick={()=>setShowDiagram(!showDiagram)}>{showDiagram?"Diagram Enabled":"Diagram Disabled"}</Button></div>}
+
+      {/* Question */}
+      <Card className="mb-4">
+        <CardHeader><CardTitle>Your Question</CardTitle></CardHeader>
+        <CardContent><Textarea value={question} onChange={e=>setQuestion(e.target.value)} placeholder="Type your question..." /></CardContent>
+      </Card>
+
+      {/* Submit */}
+      <div className="flex flex-col sm:flex-row gap-3 mb-4 items-center">
+        <motion.button onClick={handleSubmit} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} className="flex-1 py-4 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-bold rounded-xl shadow-lg">{isLoading?`Generating... ${progress}%`:"Get Answer"}</motion.button>
+      </div>
+
+      {/* Progress */}
+      {isLoading && <div className="h-1 w-full bg-gray-300 rounded-full mb-4"><div className="h-1 bg-gradient-to-r from-green-400 to-emerald-500 rounded-full" style={{width:`${progress}%`, transition:"width 0.16s linear"}}/></div>}
+
+      {/* Answer */}
+      <div ref={answerContainerRef} className="mb-6">
+        <AnimatePresence>{answer && <motion.div initial={{opacity:0,y:10}} animate={{opacity:1,y:0}} exit={{opacity:0,y:-10}}><Card className="shadow-xl p-4 rounded-2xl bg-white"><CardHeader><CardTitle>AI Answer</CardTitle></CardHeader><CardContent className="whitespace-pre-wrap">{answer}</CardContent></Card></motion.div>}</AnimatePresence>
+      </div>
+
+      {/* Credits */}
+      <motion.div className="fixed bottom-4 left-1/2 -translate-x-1/2 text-sm font-bold text-indigo-600" animate={{ y:[0,6,0] }} transition={{ repeat: Infinity, duration: 2.6, ease:"sine.inOut" }}>{credits}</motion.div>
+    </div>
+  );
+                  }ions.
           </motion.p>
         </div>
       </header>
