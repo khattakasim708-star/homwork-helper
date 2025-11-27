@@ -8,14 +8,16 @@
     "start": "next start",
     "lint": "next lint"
   },
-  "dependencies": {
-    "next": "14.1.0",
-    "react": "18.2.0",
-    "react-dom": "18.2.0",
-    "@formkit/auto-animate": "^0.8.0",
-    "lucide-react": "^0.454.0",
-    "framer-motion": "^11.0.0",
-    "clsx": "^2.1.0"
+ "dependencies": {
+  "@formkit/auto-animate": "^0.8.0",
+  "@studio-freight/lenis": "1.0.37",
+  "gsap": "^3.12.2",
+  "framer-motion": "^10.16.3",
+  "next": "14.1.0",
+  "react": "18.2.0",
+  "react-dom": "18.2.0",
+  "clsx": "^2.0.0",
+  "tailwindcss": "^3.4.0"
   },
   "devDependencies": {
     "eslint": "8.57.0",
